@@ -191,6 +191,18 @@
         <DCCReference Include="Model\Model.Ponto.pas"/>
         <DCCReference Include="Model\Model.Conexao.pas"/>
         <DCCReference Include="Controller\Controller.Ponto.pas"/>
+        <DCCReference Include="Model\Model.Autenticacao.pas"/>
+        <DCCReference Include="Model\Model.dm.pas">
+            <Form>DataModule1</Form>
+            <DesignClass>TDataModule</DesignClass>
+        </DCCReference>
+        <DCCReference Include="Model\Model.Regiao.pas"/>
+        <DCCReference Include="Controller\Controller.Regiao.pas"/>
+        <DCCReference Include="Controller\Controller.Autenticacao.pas"/>
+        <DCCReference Include="Model\Model.Grupo.pas"/>
+        <DCCReference Include="Controller\Controller.Grupo.pas"/>
+        <DCCReference Include="Model\Model.Usuario.pas"/>
+        <DCCReference Include="Controller\Controller.Usuario.pas"/>
         <BuildConfiguration Include="Base">
             <Key>Base</Key>
         </BuildConfiguration>
@@ -231,6 +243,12 @@
                 </DeployFile>
                 <DeployFile LocalName="$(BDS)\Redist\osx32\libcgunwind.1.0.dylib" Class="DependencyModule">
                     <Platform Name="OSX32">
+                        <Overwrite>true</Overwrite>
+                    </Platform>
+                </DeployFile>
+                <DeployFile LocalName="..\EXE\Linux64\Debug\ARBonificacao" Configuration="Debug" Class="ProjectOutput">
+                    <Platform Name="Linux64">
+                        <RemoteName>ARBonificacao</RemoteName>
                         <Overwrite>true</Overwrite>
                     </Platform>
                 </DeployFile>

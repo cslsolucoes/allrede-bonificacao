@@ -5,7 +5,7 @@ interface
   {$ifdef FPC}
      SysUtils,StrUtils,DateUtils,Classes,IniFiles,DB,
   {$else}
-     System.SysUtils,System.StrUtils, System.DateUtils, System.Classes,  System.IniFiles, Data.DB,
+     System.SysUtils,System.StrUtils, System.DateUtils, System.Classes,  System.IniFiles, Data.DB,System.JSON,
   {$endif}
   MemDS,
   DBAccess,
@@ -17,8 +17,6 @@ interface
 Const
  LineEnding = #13#10;
  arq_ini    =  'ARBonificacao.ini';
-
-
 
 Var
   Conn : TUniConnection;
@@ -49,6 +47,14 @@ Var
   API_ClienteSecret : String;
   API_Usuario       : String;
   API_Senha         : String;
+
+  API_app           : String;
+  API_app_id        : integer;
+  API_chaveJWT      : String;
+  API_expiracao     : integer;
+  SECRET_KEY        : String ;
+
+
 
 
 Function  CarregaINI(Conexao: TUniConnection) : String;
@@ -111,7 +117,7 @@ Begin
         [
         Id
         ]);
-
+     //Writeln(_SQL);
      IniciarQuerySIPP(Query,_SQL);
      query.Open;
      if Not query.IsEmpty then begin
@@ -139,7 +145,7 @@ Begin
             // Verifica se INI existe...
             if NOT FileExists(arq_ini) or (LowerCase(ParamStr(1)) = '-c')  then
             begin
-              ini.WriteInteger('Dados Cliente', 'ClienteId', 6);
+              ini.WriteInteger('Dados Cliente', 'ClienteId', 5);
               if LowerCase(ParamStr(1)) = '-c' then Begin
                 ini.WriteString( 'SIPP Conexao' , 'Provider' , 'PostgreSQL');
                 ini.WriteInteger('SIPP Conexao' , 'Port'     , 5432);
@@ -150,7 +156,7 @@ Begin
               End;
             end;
 
-            ClienteId    := ini.ReadInteger('Dados Cliente', 'ClienteId', 6);
+            ClienteId    := ini.ReadInteger('Dados Cliente', 'ClienteId', 5);
 
             SIPPPorvider := ini.ReadString( 'SIPP Conexao' , 'Provider' , 'PostgreSQL');
             SIPPPort     := ini.ReadInteger('SIPP Conexao' , 'Port'     ,  5432);
@@ -193,7 +199,7 @@ Begin
             // Verifica se INI existe...
             if NOT FileExists(arq_ini) then
             begin
-              ini.WriteInteger('ARPainel'      , 'Porta'   , 9008 );
+              ini.WriteInteger('ARBonificacao'      , 'Porta'   , 9008 );
               if LowerCase(ParamStr(1)) = '-c' then Begin
                 ini.WriteString( 'Banco de Dados', 'Provider', ClientePorvider);
                 ini.WriteInteger('Banco de Dados', 'Port'    , ClientePort);
@@ -206,7 +212,7 @@ Begin
 
             With Conexao do Begin
               LoginPrompt  := False;
-              portaServico := ini.ReadInteger('ARPainel'      , 'Porta'   , 9008);
+              portaServico := ini.ReadInteger('ARBonificacao'      , 'Porta'   , 9008);
               ProviderName := ini.ReadString( 'Banco de Dados', 'Provider', ClientePorvider);
               Port         := ini.ReadInteger('Banco de Dados', 'Port'    , ClientePort);
               Database     := ini.ReadString( 'Banco de Dados', 'Database', ClienteDatabase);
@@ -217,7 +223,11 @@ Begin
 
             Result := 'OK';
         except on ex:exception do
-            Result := 'Erro ao configurar banco: ' + ex.Message;
+
+         Result := format( ' {                                                ' + LineEnding +
+                           '     "status": "error"                            ' + LineEnding +
+                           '     "msg": "Erro ao configurar banco, msg: %s",  ' + LineEnding +
+                           ' }                                                ' + LineEnding ,[ex.Message]);
         end;
     finally
         if Assigned(ini) then
@@ -233,6 +243,7 @@ Procedure APICliente(Id:Integer);
 Var
   Query : TUniQuery;
   _SQL  : String;
+  jsonResponse : TJSONArray;
 Begin
 {
   API_Empresa       := 'Allrede';
@@ -246,11 +257,12 @@ Begin
      Query := TUniQuery.Create(nil);
 
      _SQL :=
-        Format('Select * from "funcaoToken"(%d)',
+        Format('Select * from "funcaoToken"(%d,%d)',
         [
-        Id
+        Id,
+        API_app_id
         ]);
-
+//     writeln(_SQL);
      IniciarQuerySIPP(Query,_SQL);
      query.Open;
      if Not query.IsEmpty then begin
@@ -260,6 +272,14 @@ Begin
         API_ClienteSecret := query.FieldByName('cliente_secret').AsString;
         API_Usuario       := trim(query.FieldByName('username').Value);
         API_Senha         := trim(query.FieldByName('password').Value);
+
+        jsonResponse := TJSONObject.ParseJSONValue(query.FieldByName('chave').AsString) as TJSONArray;
+
+        API_app_id   := jsonResponse[0].GetValue<Integer>('app_id');
+        API_chaveJWT := jsonResponse[0].GetValue<string>('key');
+        SECRET_KEY   := jsonResponse[0].GetValue<string>('key');
+        API_expiracao:= jsonResponse[0].GetValue<Integer>('expiracao_dias');
+
      end;
      query.Close;
    Finally
@@ -345,6 +365,9 @@ Begin
 
     Conn  := TUniConnection.Create(Nil);
   end;
+
+  API_app     := uUtilitarios.APP_descricao;
+  API_app_id  := uUtilitarios.APP_id;
 
   ConectarSIPP;
 

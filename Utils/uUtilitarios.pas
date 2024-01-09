@@ -9,18 +9,18 @@ uses
   System.StrUtils,
   System.DateUtils,
   Data.DB,
-  Winapi.ShellAPI,
-  system.Types,system.UITypes, Vcl.Controls,
-  Messages, system.Classes, Vcl.Dialogs,vcl.Forms,
+  //Winapi.ShellAPI,
+  system.Types,system.UITypes, system.Classes
  {$endif }
-  Windows
+ // Windows
   ;
 
 Const
   EmptyStr = '';
   LineEnding = #13#10;
   Versao = '1.0.3';
-
+  APP_descricao    = 'bonificacao';
+  APP_id           = 6;
 
   acentos : array [1..46] of String [2] = ('á' ,'à' ,'â' ,'ã' ,'ä' ,'é' ,'è' ,'ê' ,'ë' ,'í' ,
                                            'ì' ,'î' ,'ï' ,'ó' ,'ò' ,'ô' ,'õ' ,'ö' ,'ú' ,'ù' ,
@@ -51,14 +51,15 @@ Type
     TByteArr   = array of byte;
     TStringArr = array of String;
 
-Var
-  _HWND             : HWND ;
-
+//Var
+//  _HWND             : HWND ;
 
 Procedure log(valor : String; const arquivo : String = '');
 Function  StringToByte(Valor : String): TBytes;
 Function  AcentosUFT8(Valor: String): String;
-Function  ExecutaL(Comando, Parametro: String; const LocalExecucao: String ): Boolean;
+//Function  ExecutaL(Comando, Parametro: String; const LocalExecucao: String ): Boolean;
+Function  FCrypta   (VFString:String): String;
+Function  FDesCrypta(VFString:String): String;
 
 implementation
 
@@ -112,7 +113,7 @@ begin
   end;
   Result := str ;
 end;
-
+{
 Function ExecutaL(Comando, Parametro: String; const LocalExecucao: String ): Boolean;
 Var
   Command      : Array[0..1024] of Char;
@@ -138,6 +139,218 @@ begin
   StrPCopy(DirTrab,ExtractFilePath(C));
 
   ShellExecute(_HWND,nil,Command,Param,DirTrab,0);
+end;
+}
+Function  FCrypta(VFString:String): String;
+
+         Function StrZero(VFString: String; VFTamanho: Integer): String;
+         Var
+         VFRetorno       : String;
+         I,
+         VFZerosAColocar : Integer;
+         Begin
+         VFZerosAColocar := VFTamanho - Length(TrimLeft(TrimRight(VFString)));
+         VFRetorno       := '';
+
+         For I := 1 To VFZerosAColocar Do
+             VFRetorno := VFRetorno + '0';
+
+         Result := VFRetorno + TrimLeft(TrimRight(VFString));
+         End;
+
+
+         function FAsc(VFString : String) : Integer;
+         var
+         VFS: String;
+         begin
+         VFS    := VFString;
+         Result := Ord(VFS[1]);
+         end;
+
+
+         function PDireita(VFString : String; VFQuantidade : Integer) : String;
+         begin
+              Result := Copy(VFString,Length(VFString)-VFQuantidade+1,VFQuantidade);
+         end;
+
+Var
+   Y,
+   VTamanho,
+   k        : Word;
+   VAsc     : Real;
+   VCrypta  : String;
+   VNumAsc,
+   VAjuda,
+   VFLetra  : String;
+   VImpar   : Boolean;
+Begin
+   VTamanho := Length(trim(VFString));
+   VCrypta  := '';
+   VNumAsc  := '';
+   VFString := Trim(VFString);
+   For y := 1 To VTamanho Do
+       Begin
+       VFLetra  := Copy(VFString,y,1);
+       VNumAsc  := StrZero(FloatToStr(FAsc(VFLetra)),3);
+       VAjuda   := '';
+       For k := 3 Downto 1 Do
+           VAjuda := VAjuda + copy(VNumAsc,k,1);
+
+       VImpar := False;
+
+       If (y mod 2) = 0 Then
+          VAsc   := StrToFloat(VAjuda)
+       Else
+          Begin
+          VAsc   := StrToFloat(Vajuda)+3;
+          VImpar := True;
+       End;
+
+       If VAsc > 255 Then
+          If Vimpar Then
+             VCrypta := VCrypta + Chr(252)+Chr(145)+Chr(254)+Chr(StrToInt(Copy(StrZero(FloatToStr(VAsc),3),1,2)))+Chr(StrToInt(PDireita(StrZero(FloatToStr(VAsc),3),2)))
+          Else
+             VCrypta := VCrypta + Chr(252)+Chr(145)+Chr(247)+Chr(StrToInt(Copy(StrZero(FloatToStr(VAsc),3),1,2)))+Chr(StrToInt(PDireita(StrZero(FloatToStr(VAsc),3),2)))
+       Else
+          If Vimpar Then
+             VCrypta := VCrypta + Chr(254)+ Chr(StrToInt(FloatToStr(VAsc)))
+          Else
+             VCrypta := VCrypta + Chr(247)+ Chr(StrToInt(FloatToStr(VAsc)));
+   End;
+   Result := VCrypta;
+End;
+
+function FDesCrypta(VFString: String): String;
+
+         Function StrZero(VFString: String; VFTamanho: Integer): String;
+         Var
+         VFRetorno       : String;
+         I,
+         VFZerosAColocar : Integer;
+         Begin
+         VFZerosAColocar := VFTamanho - Length(TrimLeft(TrimRight(VFString)));
+         VFRetorno       := '';
+
+         For I := 1 To VFZerosAColocar Do
+             VFRetorno := VFRetorno + '0';
+
+         Result := VFRetorno + TrimLeft(TrimRight(VFString));
+         End;
+
+
+         function FAsc(VFString : String) : Integer;
+         var
+         VFS: String;
+         begin
+         VFS    := VFString;
+         Result := Ord(VFS[1]);
+         end;
+
+
+         function PDireita(VFString : String; VFQuantidade : Integer) : String;
+         begin
+              Result := Copy(VFString,Length(VFString)-VFQuantidade+1,VFQuantidade);
+         end;
+
+Var
+   y,
+   k         : Word;
+   VCrypta,
+   VProc,
+   VFLetra,
+   VAjuda,
+   VNumASc   : String;
+   VAsc      : Real;
+   VPrimNum,
+   VContProc,
+   VPegouPar,
+   VPar,
+   VParLetra : Boolean;
+Begin
+   VCrypta    := '';
+   VProc      := '';
+   VNumASc    := '';
+   VPrimNum   := False;
+   VContProc  := False;
+   VPegouPar := False;
+   VParLetra  := False;
+   For y := 1 To Length(VFString) Do
+       Begin
+       VFLetra  := Copy(VFString,y,1);
+       If (FAsc(VFLetra) = 252) And (VProc = '') Then
+          Begin
+          VProc := Vproc + VFletra;
+          Continue;
+       End;
+       If (FAsc(VFLetra) = 145) And (VFLetra <> '') Then
+          Begin
+          VProc := VProc + VFletra;
+          Continue;
+       End;
+       If VProc = Chr(252)+Chr(145) Then
+          Begin
+          VPrimNum  := True;
+          VProc     := '';
+          If VFLetra = Chr(247) Then
+             VPar := True
+          Else
+             VPar := False;
+
+          VPegoupar := True;
+          Continue;
+       End;
+       If VPrimNum Then
+          Begin
+          VPrimNum := False;
+          VNumAsc  := Trim(FloatToStr(FAsc(VFLetra)));
+          Continue;
+       End;
+       If VPegoupar Then
+          Begin
+          VPegouPar := False;
+          VNumAsc   := VNumAsc + PDireita(Trim(FloatToStr(FAsc(VFLetra))),1);
+          VAsc      := StrToFloat(VNumASc);
+          If Not Vpar Then
+             VAsc  := VAsc - 3;
+
+          VAjuda := '';
+          For k := 3 Downto 1 Do
+              VAjuda := VAjuda + Copy(FloatToStr(VAsc),k,1);
+
+          VAsc := StrToFloat(VAjuda);
+       End
+       Else
+          Begin
+          If Not VParLetra Then
+             Begin
+             If VFletra = Chr(247) Then
+                VPar := True
+             Else
+                Vpar := False;
+
+             VParLetra := True;
+             Continue;
+          End
+          Else
+            VParletra := False;
+
+          VAjuda := FloatToStr(FAsc(VFLetra));
+
+          If VPar Then
+             VAsc := StrToFloat(VAjuda)
+          Else
+             VAsc := StrToFloat(VAjuda) - 3;
+
+          VNumAsc  := StrZero(FloatToStr(VAsc),3);
+          VAjuda   := '';
+          For k := 3 Downto 1 Do
+              VAjuda := VAjuda + Copy(VNumAsc,k,1);
+
+          VAsc := StrToFloat(VAjuda);
+       End;
+       VCrypta := VCrypta + Chr(StrToInt(FloatToStr(VAsc)));
+   End;
+   Result := VCrypta;
 end;
 
 end.
